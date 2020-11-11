@@ -1,16 +1,15 @@
+import { Console } from "console";
 import React, { useRef, useEffect, useState } from "react";
 import { SketchPicker } from "react-color";
 // @ts-ignore
 import { exportComponentAsPNG } from "react-component-export-image";
 
 function App() {
-  const BOX_WIDTH = 800;
-  // Box height
-  const BOX_HEIGHT = 600;
-  // Padding
   const PADDING = 0;
   const CELL_SIZE = 20;
   const [selectedColor, setSelectedColor] = useState("#dddddd");
+  const [boxWidth, setBoxWidth] = useState(800);
+  const [boxHeight, setBoxHeight] = useState(600);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     if (canvasRef.current?.getContext("2d")) {
@@ -21,13 +20,13 @@ function App() {
     }
   }, []);
   const drawBoard = (context: CanvasRenderingContext2D) => {
-    for (let x = 0; x <= BOX_WIDTH; x += CELL_SIZE) {
+    for (let x = 0; x <= boxWidth; x += CELL_SIZE) {
       context.moveTo(0.5 + x + PADDING, PADDING);
-      context.lineTo(0.5 + x + PADDING, BOX_HEIGHT + PADDING);
+      context.lineTo(0.5 + x + PADDING, boxHeight + PADDING);
     }
-    for (let x = 0; x <= BOX_HEIGHT; x += CELL_SIZE) {
+    for (let x = 0; x <= boxHeight; x += CELL_SIZE) {
       context.moveTo(PADDING, 0.5 + x + PADDING);
-      context.lineTo(BOX_WIDTH + PADDING, 0.5 + x + PADDING);
+      context.lineTo(boxWidth + PADDING, 0.5 + x + PADDING);
     }
     context.strokeStyle = "#222831";
     context.stroke();
@@ -36,6 +35,7 @@ function App() {
   const handleCanvasClick = (
     e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
   ) => {
+    console.log(e);
     const context = canvasRef.current?.getContext("2d");
     const rect = canvasRef.current?.getBoundingClientRect();
     let X, Y;
@@ -47,7 +47,8 @@ function App() {
         y: Math.floor((e.clientY - rect.top) / CELL_SIZE),
       });
       if (context) {
-        context.fillStyle = selectedColor;
+        if (e.altKey) context.fillStyle = "#e8e8e8";
+        else context.fillStyle = selectedColor;
         context.fillRect(X * CELL_SIZE, Y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         drawBoard(context);
       }
@@ -83,10 +84,12 @@ function App() {
         }}
       >
         <canvas
-          width={BOX_WIDTH}
-          height={BOX_HEIGHT}
+          width={`${boxWidth}px`}
+          height={`${boxHeight}px`}
           ref={canvasRef}
           onClick={handleCanvasClick}
+          onKeyPress={(e) => console.log(e)}
+          onKeyDown={(e) => console.log(e)}
           style={{ border: "1px solid #30475e", backgroundColor: "#e8e8e8" }}
         />
         <section>
@@ -124,10 +127,7 @@ function App() {
               border: "none",
             }}
             onClick={() => {
-              const context = canvasRef.current?.getContext("2d");
-              if (context) {
-                drawBoard(context);
-              }
+              setSelectedColor("#e8e8e8");
             }}
           >
             RESETAR
