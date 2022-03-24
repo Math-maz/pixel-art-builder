@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, MouseEventHandler } from "react";
 import { SketchPicker } from "react-color";
 // @ts-ignore
 import { exportComponentAsPNG } from "react-component-export-image";
+import { debounce } from "./utils/debounce";
 
 function App() {
   const BOX_WIDTH = 800;
@@ -16,11 +17,12 @@ function App() {
     if (canvasRef.current?.getContext("2d")) {
       const context = canvasRef.current.getContext("2d");
       if (context) {
-        drawBoard(context);
+        drawBoard(context, "black");
       }
     }
   }, []);
-  const drawBoard = (context: CanvasRenderingContext2D) => {
+  const drawBoard = (context: CanvasRenderingContext2D, strokeColor: string) => {
+    // context.clearRect(0, 0, canvasRef.current?.width!, canvasRef.current?.height!)
     for (let x = 0; x <= BOX_WIDTH; x += CELL_SIZE) {
       context.moveTo(0.5 + x + PADDING, PADDING);
       context.lineTo(0.5 + x + PADDING, BOX_HEIGHT + PADDING);
@@ -29,7 +31,7 @@ function App() {
       context.moveTo(PADDING, 0.5 + x + PADDING);
       context.lineTo(BOX_WIDTH + PADDING, 0.5 + x + PADDING);
     }
-    context.strokeStyle = "#222831";
+    context.strokeStyle = strokeColor
     context.stroke();
   };
 
@@ -48,11 +50,43 @@ function App() {
       });
       if (context) {
         context.fillStyle = selectedColor;
-        context.fillRect(X * CELL_SIZE, Y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-        drawBoard(context);
+        context.fillRect((X * CELL_SIZE) + 1, (Y * CELL_SIZE) + 1, CELL_SIZE - 1, CELL_SIZE - 1);
+        // drawBoard(context, "black");
       }
     }
   };
+  const handleCanvasMouseOver = (
+    e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+  ) => {
+    if (!e.altKey) return
+    const context = canvasRef.current?.getContext("2d");
+    const rect = canvasRef.current?.getBoundingClientRect();
+    let X, Y;
+    if (rect) {
+      X = Math.floor((e.clientX - rect.left) / CELL_SIZE);
+      Y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+      console.log({
+        x: Math.floor((e.clientX - rect.left) / CELL_SIZE),
+        y: Math.floor((e.clientY - rect.top) / CELL_SIZE),
+      });
+      if (context) {
+        context.fillStyle = selectedColor;
+        context.fillRect((X * CELL_SIZE) + 1, (Y * CELL_SIZE) + 1, CELL_SIZE - 1, CELL_SIZE - 1);
+        // drawBoard(context, "black");
+      }
+    }
+  };
+  const handleExport = (canvasRef: React.RefObject<HTMLCanvasElement>) => {
+    return (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!canvasRef.current) {
+        return
+      }
+      const canvas2DContext = canvasRef.current.getContext("2d")!
+      drawBoard(canvas2DContext, "#e8e8e8")
+      exportComponentAsPNG(canvasRef)
+      drawBoard(canvas2DContext, "black")
+    }
+  }
   return (
     <div
       className="App"
@@ -87,6 +121,7 @@ function App() {
           height={BOX_HEIGHT}
           ref={canvasRef}
           onClick={handleCanvasClick}
+          onMouseMove={handleCanvasMouseOver}
           style={{ border: "1px solid #30475e", backgroundColor: "#e8e8e8" }}
         />
         <section>
@@ -107,7 +142,7 @@ function App() {
               color: "white",
               border: "none",
             }}
-            onClick={() => exportComponentAsPNG(canvasRef)}
+            onClick={handleExport(canvasRef)}
           >
             EXPORTAR
           </button>
@@ -126,7 +161,9 @@ function App() {
             onClick={() => {
               const context = canvasRef.current?.getContext("2d");
               if (context) {
-                drawBoard(context);
+                context.fillStyle = "#e8e8e8"
+                context.fillRect(0, 0, canvasRef.current?.width!, canvasRef.current?.height!)
+                drawBoard(context, "black")
               }
             }}
           >
